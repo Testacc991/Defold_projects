@@ -1,0 +1,20 @@
+function init(self)
+	msg.post(".","acquire_input_focus")
+	local component = "go#factory"
+	math.randomseed(os.clock()*10000)
+	pos1 = vmath.vector3(300,300,0)
+	timer.delay(0.3,true, function()
+		pos2 = vmath.vector3(math.random(-300,300),math.random(-300,300),0)
+		pos2 = vmath.normalize(pos2)
+		pos2 = pos1+pos2*250
+		factory.create(component, pos2)
+	end)
+end
+
+function update(self, dt)
+	
+end
+
+function on_input(self, action_id, action)
+	posm = vmath.vector3(action.x, action.y, 0)
+end

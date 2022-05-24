@@ -1,0 +1,38 @@
+local component = "#factory"
+local WIDTH = 3
+local HEIGHT = 5
+function createboard(x1,y1,bsize)
+	local t = {}
+	for y=1,y1 do
+		t[y] = {}
+		for x=1,x1 do
+			local pos = vmath.vector3()
+			pos.y = y*180
+			pos.x = x*180-bsize
+			local instance = factory.create(component, pos)
+			t[y][x] = instance
+		end
+	end
+	return t
+end
+	
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	cells = createboard(WIDTH,HEIGHT,40)
+	go.set_position(go.get_position(cells[2][3]),"counter")
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.released then
+		for i=1,HEIGHT do
+			for v=1,WIDTH do
+				local pos = go.get_position(cells[i][v])
+				local distance = vmath.length(vmath.vector3(action.x, action.y, pos.z) - pos )
+				if distance < 100 then 
+					go.set_position(go.get_position(cells[i][v]),"counter")
+				end
+			end
+		end
+	end
+end

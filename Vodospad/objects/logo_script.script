@@ -1,0 +1,8 @@
+function update(self, dt)
+	local p = go.get_position()
+	p.y = p.y - 100 * dt
+	if p.y < 0 then
+		go.delete()
+	end
+	go.set_position(p)
+end

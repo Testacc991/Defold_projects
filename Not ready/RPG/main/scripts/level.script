@@ -1,0 +1,25 @@
+function init(self)
+	--msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	v = vmath.vector3(0,0,0)
+	pos = go.get_position("logo")
+end
+function on_message(self, message_id, message, sender)
+	if message_id == hash("velocity") then
+		v = message.vel*120
+		en = message.en
+		print(en)
+	end
+end
+function on_input(self, action_id, action)
+end
+
+
+function update(self, dt)
+	if en == true then
+		pos = pos-dt*v
+		print(pos)
+		go.set_position(pos,"logo")
+	end
+	en = false
+end

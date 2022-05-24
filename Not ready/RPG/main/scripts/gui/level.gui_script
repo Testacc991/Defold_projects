@@ -1,0 +1,54 @@
+function init(self)
+	
+	msg.post(".", "acquire_input_focus")
+	
+	
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") or action_id == hash("touch2") and action.pressed then
+		if gui.pick_node(gui.get_node("pie"), action.x, action.y) then
+			msg.post("main:/controller#controller", "show menu")
+			print("Button pie has been pressed")
+		end
+		local radius = 90
+		local touchpos = vmath.vector3(action.x, action.y, 0)
+		local center = vmath.vector3(1400,130,0)
+		dir = vmath.normalize(center-touchpos)
+		local x = center.x - dir.x * radius
+		local y = center.y - dir.y * radius
+		print("dir"..dir)
+		gui.set_position(
+		gui.get_node("piecontroller"),
+		vmath.vector3(x,y,0))
+		--print("Button piec has been pressed")
+		enable = true
+		msg.post("block","velocity",{vel = dir,en = enable})
+	end
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
