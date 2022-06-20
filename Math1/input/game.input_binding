@@ -1,3 +1,7 @@
+key_trigger {
+  input: KEY_BACKSPACE
+  action: "back"
+}
 mouse_trigger {
   input: MOUSE_BUTTON_1
   action: "touch"
@@ -5,4 +9,8 @@ mouse_trigger {
 touch_trigger {
   input: TOUCH_MULTI
   action: "touch2"
+}
+text_trigger {
+  input: TEXT
+  action: "text"
 }

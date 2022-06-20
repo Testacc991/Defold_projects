@@ -1,64 +1,174 @@
-function init(self)
+local FILE_PATH
+local TASK
+local XP
+local LEVEL
+local OLDLEVEL = 0
+local OLDXP = 0
+local OLDTASK = 0
+
+local task
+local xp
+local level
+local add
+local exit
+local rem
+
+local menu
+local countopened = false
+local levelopened = false
+local levelbox
+local countbox
+local leveltext
+local counttext
+local applybox
+
+local queue = {}
+local function scoretolevel(score)
+	return math.ceil(((score^0.5/2000)+score/2000)^0.5)
+end
+local function nextlevel(level)
+	return level*100
+end
+local function hideshowtlx(value)
+	gui.set_enabled(task, value)
+	gui.set_enabled(level, value)
+	gui.set_enabled(xp, value)
+	gui.set_enabled(add, value)
+	gui.set_enabled(exit, value)
+	gui.set_enabled(rem, value)
+end
+local function loadingsaved(self)
 	FILE_PATH = sys.get_save_file("my_game", "shlyah")
-	my_table = sys.load(FILE_PATH)
-	print(my_table)
+	local my_table = sys.load(FILE_PATH)
+
 	if not next(my_table) then
-		sys.save(FILE_PATH,{0,0,0})
+		sys.save(FILE_PATH,{0,0,0,{}})
 		LEVEL = sys.load(FILE_PATH)[1]
 		XP = sys.load(FILE_PATH)[2] 
 		TASK = sys.load(FILE_PATH)[3]
+		queue = sys.load(FILE_PATH)[4]
 	else
-	LEVEL = sys.load(FILE_PATH)[1]
-	XP = sys.load(FILE_PATH)[2] 
-	TASK = sys.load(FILE_PATH)[3]
+		LEVEL = sys.load(FILE_PATH)[1]
+		XP = sys.load(FILE_PATH)[2] 
+		TASK = sys.load(FILE_PATH)[3]
+		queue = sys.load(FILE_PATH)[4]
 	end
-	CONSTANT = 0.1
+end
+function init(self)
+	loadingsaved(self)
 	msg.post(".", "acquire_input_focus")
 	task = gui.get_node("task")
 	xp = gui.get_node("xp")
 	level = gui.get_node("Level")
-end
+	add = gui.get_node("add")
+	rem = gui.get_node("rem")
+	exit = gui.get_node("exit")
+	
+	menu = gui.get_node("menu")
+	counttext = gui.get_node("counttext")
+	leveltext = gui.get_node("leveltext")
+	countbox = gui.get_node("count")
+	levelbox = gui.get_node("level")
+	applybox = gui.get_node("apply")
+	
+	gui.set_enabled(menu, false)
 
-function final(self)
+	self.levelbuffer = 0
+	self.countbuffer = 0
 	
 end
-
+local function updatescroll(self)
+	
+end
 function update(self, dt)
-	LEVEL = CONSTANT * math.sqrt(XP)
-	gui.set_text(level,"Level "..math.floor(LEVEL))
-	gui.set_text(xp,"Xp "..XP)
+	if OLDLEVEL < LEVEL then
+		OLDLEVEL = OLDLEVEL + 1
+	end
+	if LEVEL < OLDLEVEL then
+		OLDLEVEL = OLDLEVEL - 1
+	end
+	if OLDXP < XP then
+		OLDXP = math.floor(OLDXP + math.ceil(XP)/10)
+	end
+	if XP < OLDXP then
+		OLDXP = math.floor(OLDXP - math.ceil(OLDXP)/10)
+	end
+	if OLDTASK < TASK then
+		OLDTASK = math.floor(OLDTASK + math.ceil(TASK)/10)
+	end
+	if TASK > OLDTASK then
+		OLDTASK = math.floor(OLDTASK - math.ceil(OLDTASK)/10)
+	end
+	gui.set_text(level,"Level "..OLDLEVEL)
+	gui.set_text(xp,"Xp "..OLDXP)
 	gui.set_text(task,"Task "..TASK)	
 end
 
 function on_message(self, message_id, message, sender)
-	-- Add message-handling code here
-	-- Learn more: https://defold.com/manuals/message-passing/
-	-- Remove this function if not needed
 end
 
 function on_input(self, action_id, action)
-	if action_id == hash("touch") or action_id == hash("touch2") and action.pressed then
-		if gui.pick_node(gui.get_node("add"), action.x, action.y) then
-			if action.released then
-				TASK = TASK+1
-				XP = XP+50
-				sys.save(FILE_PATH,{LEVEL,XP,TASK})
+	if action_id == hash("touch")  then
+	--if action_id == hash("touch2") then
+		if gui.pick_node(gui.get_node("add"), action.x, action.y) and  action.released then
+			gui.set_enabled(menu, true)
+			hideshowtlx(false)
+		elseif gui.pick_node(gui.get_node("rem"), action.x, action.y) and action.released then
+			if #queue > 0 then
+				local b = table.remove(queue)
+				LEVEL = b[1]
+				XP = b[2]
+				TASK = b[3]
+			else
+				LEVEL = 0
+				XP = 0
+				TASK = 0
 			end
+			pprint(queue)
+			sys.save(FILE_PATH,{LEVEL,XP,TASK,queue})
+		elseif gui.pick_node(gui.get_node("exit"), action.x, action.y) and action.released then
+			sys.save(FILE_PATH,{LEVEL,XP,TASK,queue})
+			os.exit()
+		elseif gui.pick_node(countbox, action.x, action.y) and  action.released then
+			levelopened = false
+			gui.show_keyboard(gui.KEYBOARD_TYPE_NUMBER_PAD,false)
+			countopened = true	
+		elseif gui.pick_node(levelbox, action.x, action.y) and  action.released then
+			countopened = false	
+			gui.show_keyboard(gui.KEYBOARD_TYPE_NUMBER_PAD,false)
+			levelopened = true
+		elseif gui.pick_node(applybox, action.x, action.y) and  action.released then
+			if self.levelbuffer > 0 and self.countbuffer > 0 then
+				countopened = false
+				levelopened = false
+				gui.hide_keyboard()
+				table.insert(queue, {LEVEL,XP,TASK})
+				TASK = TASK + self.countbuffer
+				XP = XP + nextlevel(self.levelbuffer)*self.countbuffer
+				LEVEL = scoretolevel(XP)
+				--print(nextlevel(self.levelbuffer)*self.countbuffer)
+				--print(self.levelbuffer)
+				gui.set_enabled(menu, false)
+				hideshowtlx(true)
+				sys.save(FILE_PATH,{LEVEL,XP,TASK,queue})
+			end
+		end		
+	end
+	if action_id == hash("text") then
+		if countopened then
+			self.countbuffer = tonumber(self.countbuffer..action.text)
+			gui.set_text(counttext,"Count:"..self.countbuffer)
+		elseif levelopened then
+			self.levelbuffer = tonumber(self.levelbuffer..action.text)
+			gui.set_text(leveltext,"Level:"..self.levelbuffer)
 		end
-		if gui.pick_node(gui.get_node("rem"), action.x, action.y) then
-			if action.released then
-				if TASK>=1 then
-					XP = XP-50
-					TASK = TASK-1
-				end
-				sys.save(FILE_PATH,{LEVEL,XP,TASK})
-			end
-		end
-		if gui.pick_node(gui.get_node("exit"), action.x, action.y) then
-			if action.released then
-				sys.save(FILE_PATH,{LEVEL,XP,TASK})
-				os.exit()
-			end
+	elseif action_id == hash("back") and action.released then
+		if countopened then
+			self.countbuffer = 0
+			gui.set_text(counttext,"Count:"..self.countbuffer)
+		elseif levelopened then
+			self.levelbuffer = 0
+			gui.set_text(leveltext,"Level:"..self.levelbuffer)
 		end
 	end
 end
